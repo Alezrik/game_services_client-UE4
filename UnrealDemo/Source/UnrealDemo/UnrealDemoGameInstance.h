@@ -6,6 +6,9 @@
 #include "UnrealDemoConnectionStatus.h"
 #include "Engine/GameInstance.h"
 #include "Sockets.h"
+#include "MultichannelTcpReceiver.h"
+#include "MultichannelTcpSender.h"
+
 
 #include "UnrealDemoGameInstance.generated.h"
 
@@ -18,17 +21,18 @@ class UNREALDEMO_API UUnrealDemoGameInstance : public UGameInstance
 	GENERATED_BODY()
 
 public:
-
 	virtual void Init() override;
 	UFUNCTION(BlueprintCallable, Category="GameServices")
 	EGameServiceConnectionStatus GetGameServiceConnectionStatus() { return GameServiceConnectionStatus; };
 	UFUNCTION(BlueprintCallable, Category = "GameServices")
-	void ConnectToGameService();
-	
+	EGameServiceConnectionStatus ConnectToGameService();
+	UFUNCTION(BlueprintCallable, Category = "GameServices")
+	EGameServiceConnectionStatus ResetConnectionError();
+	UFUNCTION(BlueprintCallable, Category = "GameServices")
+	EGameServiceConnectionStatus CloseConnection();
 
 private:
-	FSocket* Socket = NULL;
+	TSharedPtr<FSocket> Socket;
 	TSharedRef<FInternetAddr> GetGameServiceConnectionAddress();
 	EGameServiceConnectionStatus GameServiceConnectionStatus = EGameServiceConnectionStatus::CSTATUS_NOT_INITALIZED;
-
 };

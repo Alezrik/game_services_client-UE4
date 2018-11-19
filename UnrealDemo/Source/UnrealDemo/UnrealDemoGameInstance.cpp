@@ -6,13 +6,16 @@
 #include "SocketSubsystem.h"
 
 #include "Networking/Public/Interfaces/IPv4/IPv4Address.h"
+#include <memory>
+
+
 
 
 void UUnrealDemoGameInstance::Init()
 {
-	this->Socket = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateSocket(NAME_Stream, TEXT("default"), false);
 	GameServiceConnectionStatus = EGameServiceConnectionStatus::CSTATUS_NOT_CONNECTED;
 }
+
 
 TSharedRef<FInternetAddr> UUnrealDemoGameInstance::GetGameServiceConnectionAddress()
 {
@@ -23,17 +26,46 @@ TSharedRef<FInternetAddr> UUnrealDemoGameInstance::GetGameServiceConnectionAddre
 	return addr;
 }
 
-void UUnrealDemoGameInstance::ConnectToGameService()
+EGameServiceConnectionStatus UUnrealDemoGameInstance::ConnectToGameService()
 {
+	Socket = MakeShareable(ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateSocket(NAME_Stream, TEXT("default"), false));
 	if(GameServiceConnectionStatus != EGameServiceConnectionStatus::CSTATUS_NOT_CONNECTED)
 	{
-		throw FString("Invalid Status for Connection");
+		return GameServiceConnectionStatus;
 	}
 
 	bool connected = Socket->Connect(*GetGameServiceConnectionAddress());
-	if(connected == true)
+	if (connected == true)
 	{
 		GameServiceConnectionStatus = EGameServiceConnectionStatus::CSTATUS_CONNECTED_TO_SERVER;
 	}
+	else
+	{
+		GameServiceConnectionStatus = EGameServiceConnectionStatus::CSTATUS_CONNECTION_ERROR;
+	}
+	return GameServiceConnectionStatus;
+	
 }
+
+EGameServiceConnectionStatus UUnrealDemoGameInstance::ResetConnectionError()
+{
+	if (GameServiceConnectionStatus != EGameServiceConnectionStatus::CSTATUS_CONNECTION_ERROR)
+		return GameServiceConnectionStatus;
+	GameServiceConnectionStatus = EGameServiceConnectionStatus::CSTATUS_NOT_CONNECTED;
+	return GameServiceConnectionStatus;
+}
+
+EGameServiceConnectionStatus UUnrealDemoGameInstance::CloseConnection()
+{
+	if (GameServiceConnectionStatus == EGameServiceConnectionStatus::CSTATUS_CONNECTED_TO_SERVER)
+	{
+		Socket->Close();
+		Socket.Reset();
+		GameServiceConnectionStatus = EGameServiceConnectionStatus::CSTATUS_NOT_CONNECTED;
+	}
+	return GameServiceConnectionStatus;
+	
+}
+
+
 

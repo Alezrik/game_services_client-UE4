@@ -90,11 +90,14 @@ EGameServiceConnectionStatus UUnrealDemoGameInstance::CloseConnection()
 	{
 		TcpClient->StopWorker();
 		TcpClient->ShutdownClient();
-		if(Socket.IsValid() == true && Socket->GetConnectionState() == ESocketConnectionState::SCS_Connected)
+		if (Socket.Get() != nullptr && Socket.IsValid() == true && Socket->GetConnectionState() == ESocketConnectionState::SCS_Connected)
+		{
+			
 			Socket->Close();
-		if(Socket.IsValid())
+
 			Socket.Reset();
-		GameServiceConnectionStatus = EGameServiceConnectionStatus::CSTATUS_NOT_CONNECTED;
+			GameServiceConnectionStatus = EGameServiceConnectionStatus::CSTATUS_NOT_CONNECTED;
+		}
 	}
 	return GameServiceConnectionStatus;
 	

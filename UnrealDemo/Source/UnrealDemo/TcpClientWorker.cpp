@@ -21,19 +21,30 @@ uint32 TcpClientWorker::Run()
 		uint32 BufferSize = 1024;
 		
 		FTimespan HeartBeatCheck = FDateTime::Now() - LastActivity;
+		if(!SendMessageQueue.IsEmpty())
+		{
+			while(!SendMessageQueue.IsEmpty())
+			{
+				TArray<uint8> Message;
+				SendMessageQueue.Dequeue(Message);
+				
+			}
+		}
 		if(HeartBeatCheck.GetTotalSeconds() > 1)
 		{
-			uint8 HeartBeatData[14] = {0,0,0,0,0,0,0,66,2,0,0,0,1,2};
+			uint8* HeartBeatData = Serializer->GetCClinetHeartbeatMessage();
 			int32 BytesSent;
-			Socket->Send(HeartBeatData, 14, BytesSent);
+			
+			Socket->Send(HeartBeatData, 13, BytesSent);
 			LastActivity = FDateTime::Now();
-			UE_LOG(LogTemp, Warning, TEXT("Heart Beat"));
+			UE_LOG(LogTemp, Warning, TEXT("Heart Beat: %d, datasize: %d"), BytesSent, sizeof(HeartBeatData));
 		}
 		bool hasData = Socket->HasPendingData(DataAvailable);
-		if (BytesRead > 0)
+		if (hasData)
 		{
 			LastActivity = FDateTime::Now();
-			Socket->Recv(DataIn, BufferSize, BytesRead);
+			Socket->Recv(DataIn, DataAvailable, BytesRead);
+			UE_LOG(LogTemp, Warning, TEXT("Socket Receive: %d"), DataAvailable);
 		}
 	}
 	Socket.Reset();
@@ -43,5 +54,10 @@ uint32 TcpClientWorker::Run()
 void TcpClientWorker::Stop()
 {
 	ExecuteLoop = false;
+}
+
+void TcpClientWorker::SendMessage(TArray<uint8> Message)
+{
+	SendMessageQueue.Enqueue(Message);
 }
 

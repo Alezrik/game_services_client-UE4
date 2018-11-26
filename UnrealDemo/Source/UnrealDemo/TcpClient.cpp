@@ -20,7 +20,7 @@ ETcpClientStatus UTcpClient::InitializeClient(TSharedPtr<FSocket> Socket)
 
 ETcpClientStatus UTcpClient::ShutdownClient()
 {
-	if (Socket.IsValid() && Socket->GetConnectionState() == ESocketConnectionState::SCS_Connected)
+	if (Socket.Get() != nullptr && Socket.IsValid() && Socket->GetConnectionState() == ESocketConnectionState::SCS_Connected)
 	{
 		if(ClientStatus == ETcpClientStatus::CCLIENT_INITIALIZED || ClientStatus == ETcpClientStatus::CCLINET_STOPPED)
 		{
@@ -36,7 +36,7 @@ ETcpClientStatus UTcpClient::ShutdownClient()
 
 ETcpClientStatus UTcpClient::StartWorker()
 {
-	if(Socket.IsValid() && Socket->GetConnectionState() == ESocketConnectionState::SCS_Connected && Thread == nullptr)
+	if(Socket.Get() != nullptr && Socket.IsValid() && Socket->GetConnectionState() == ESocketConnectionState::SCS_Connected && Thread == nullptr)
 	{
 		if(ClientStatus == ETcpClientStatus::CCLIENT_INITIALIZED || ClientStatus == ETcpClientStatus::CCLINET_STOPPED)
 		{

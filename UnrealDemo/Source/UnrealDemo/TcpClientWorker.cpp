@@ -2,6 +2,9 @@
 
 #include "TcpClientWorker.h"
 #include "PlatformProcess.h"
+#include "TcpClientSender.h"
+#include "TcpCommandProcessor.h"
+#include "RunnableThread.h"
 
 bool TcpClientWorker::Init()
 {
@@ -12,7 +15,9 @@ uint32 TcpClientWorker::Run()
 	ExecuteLoop = true;
 	FDateTime StartTIme = FDateTime::Now();
 	FDateTime LastActivity = FDateTime::Now();
-	while(ExecuteLoop == true)
+	SendThread = FRunnableThread::Create(ClientSenderPtr, TEXT("TcpClientSender"));
+	CmdProcessThread = FRunnableThread::Create(CommandProcessorPtr, TEXT("TcpCommandProcessor"));
+	while(ExecuteLoop)
 	{
 		uint8 DataIn[1024];
 		// read will 0 out when finished with data...
@@ -21,43 +26,49 @@ uint32 TcpClientWorker::Run()
 		uint32 BufferSize = 1024;
 		
 		FTimespan HeartBeatCheck = FDateTime::Now() - LastActivity;
-		if(!SendMessageQueue.IsEmpty())
+		if(Socket.IsValid())
 		{
-			while(!SendMessageQueue.IsEmpty())
+			if (HeartBeatCheck.GetTotalSeconds() > 4)
 			{
-				TArray<uint8> Message;
-				SendMessageQueue.Dequeue(Message);
+				TArray<uint8> HeartBeatData = Serializer->GetCClinetHeartbeatMessage();
+				this->ClientSenderPtr->SendMessage(HeartBeatData);
+				LastActivity = FDateTime::Now();
+			}
+
+			TSharedPtr<FSocket> SocketPtr = Socket.Pin();
+			if(SocketPtr.IsValid())
+			{
 				
+				
+				bool hasData = SocketPtr->HasPendingData(DataAvailable);
+				if (hasData)
+				{
+					LastActivity = FDateTime::Now();
+					SocketPtr->Recv(DataIn, DataAvailable, BytesRead);
+					UE_LOG(LogTemp, Warning, TEXT("Socket Receive: %d"), DataAvailable);
+					TArray<uint8> ReceivedData;
+					for(int x =0;x<BytesRead;x++)
+					{
+						ReceivedData.Add(DataIn[x]);
+						ReceiveMessageQueue.Enqueue(ReceivedData);
+					}
+				}	
 			}
 		}
-		if(HeartBeatCheck.GetTotalSeconds() > 1)
-		{
-			uint8* HeartBeatData = Serializer->GetCClinetHeartbeatMessage();
-			int32 BytesSent;
-			
-			Socket->Send(HeartBeatData, 13, BytesSent);
-			LastActivity = FDateTime::Now();
-			UE_LOG(LogTemp, Warning, TEXT("Heart Beat: %d, datasize: %d"), BytesSent, sizeof(HeartBeatData));
-		}
-		bool hasData = Socket->HasPendingData(DataAvailable);
-		if (hasData)
-		{
-			LastActivity = FDateTime::Now();
-			Socket->Recv(DataIn, DataAvailable, BytesRead);
-			UE_LOG(LogTemp, Warning, TEXT("Socket Receive: %d"), DataAvailable);
-		}
+		
 	}
-	Socket.Reset();
+	CommandProcessorPtr->FlushAndComplete();
+	ClientSenderPtr->FlushAndComplete();
+	CmdProcessThread->WaitForCompletion();
+	SendThread->WaitForCompletion();
+	Socket = nullptr;
 	return 0;
 }
 
 void TcpClientWorker::Stop()
 {
 	ExecuteLoop = false;
-}
 
-void TcpClientWorker::SendMessage(TArray<uint8> Message)
-{
-	SendMessageQueue.Enqueue(Message);
+
 }
 

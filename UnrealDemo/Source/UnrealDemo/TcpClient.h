@@ -28,7 +28,7 @@ public:
 	ETcpClientStatus StopWorker();
 private:
 	ETcpClientStatus ClientStatus;
-	TSharedPtr<FSocket> Socket;
+	TWeakPtr<FSocket> Socket;
 	TcpClientWorker* TcpClientWorker = nullptr;
 	FRunnableThread* Thread = nullptr;
 	

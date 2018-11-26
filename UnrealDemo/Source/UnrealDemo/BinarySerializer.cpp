@@ -2,28 +2,24 @@
 
 #include "BinarySerializer.h"
 
-uint8* UBinarySerializer::GetCClinetHeartbeatMessage()
+TArray<uint8> UBinarySerializer::GetCClinetHeartbeatMessage()
 {
+	TArray<uint8> ArrayTestMessage;
 	uint8* Header = this->UInt64ToBinary(100);
 	uint8 MessageContents[1] = { 1 };
 	uint8* MessageSize = this->ReverseEldian(this->UInt32ToBinary(sizeof(MessageContents)), 4);
-
-
-	uint8* Message = new uint8[13];
 	for(int x =0;x<8;x++)
 	{
-		Message[x] = Header[x];
+		ArrayTestMessage.Add(Header[x]);
 	}
 	for(int x=0;x<4;x++)
 	{
-		Message[x + 8] = MessageSize[x];
+		ArrayTestMessage.Add(MessageSize[x]);
 	}
-
-	Message[12] = MessageContents[0];
+	ArrayTestMessage.Add(MessageContents[0]);
 	delete Header;
 	delete MessageSize;
-	return Message;
-
+	return ArrayTestMessage;
 }
 
 uint8* UBinarySerializer::ReverseEldian(uint8* binary, int length)

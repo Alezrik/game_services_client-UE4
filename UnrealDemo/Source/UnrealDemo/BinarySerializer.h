@@ -15,10 +15,11 @@ class UNREALDEMO_API UBinarySerializer : public UObject
 	GENERATED_BODY()
 
 public:
-		uint8* GetCClinetHeartbeatMessage();
-	
+	TArray<uint8> GetCClinetHeartbeatMessage();
+			
 private:
 	uint8* UInt32ToBinary(uint32 integer);
 	uint8* UInt64ToBinary(uint64 integer);
 	uint8* ReverseEldian(uint8* binary, int length);
+
 };

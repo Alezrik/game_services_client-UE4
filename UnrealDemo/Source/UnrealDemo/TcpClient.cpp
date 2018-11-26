@@ -20,14 +20,20 @@ ETcpClientStatus UTcpClient::InitializeClient(TSharedPtr<FSocket> Socket)
 
 ETcpClientStatus UTcpClient::ShutdownClient()
 {
-	if (Socket.Get() != nullptr && Socket.IsValid() && Socket->GetConnectionState() == ESocketConnectionState::SCS_Connected)
+	if (Socket != nullptr && Socket.IsValid())
 	{
-		if(ClientStatus == ETcpClientStatus::CCLIENT_INITIALIZED || ClientStatus == ETcpClientStatus::CCLINET_STOPPED)
+		TSharedPtr<FSocket> SocketPtr = Socket.Pin();
+		if(SocketPtr->GetConnectionState() == ESocketConnectionState::SCS_Connected)
 		{
-			Socket.Reset();
-			ClientStatus = ETcpClientStatus::CCLIENT_NOT_INITIALIZED;
-			delete TcpClientWorker;
-			TcpClientWorker = nullptr;
+			if (ClientStatus == ETcpClientStatus::CCLIENT_INITIALIZED || ClientStatus == ETcpClientStatus::CCLINET_STOPPED)
+			{
+				Socket = nullptr;
+				ClientStatus = ETcpClientStatus::CCLIENT_NOT_INITIALIZED;
+				delete TcpClientWorker;
+				TcpClientWorker = nullptr;
+
+			}
+
 
 		}
 	}
@@ -36,8 +42,13 @@ ETcpClientStatus UTcpClient::ShutdownClient()
 
 ETcpClientStatus UTcpClient::StartWorker()
 {
-	if(Socket.Get() != nullptr && Socket.IsValid() && Socket->GetConnectionState() == ESocketConnectionState::SCS_Connected && Thread == nullptr)
+	if(Socket != nullptr && Socket.IsValid() && Thread == nullptr)
 	{
+		TSharedPtr<FSocket> SocketPtr = Socket.Pin();
+		if (SocketPtr->GetConnectionState() == ESocketConnectionState::SCS_Connected)
+		{
+
+		}
 		if(ClientStatus == ETcpClientStatus::CCLIENT_INITIALIZED || ClientStatus == ETcpClientStatus::CCLINET_STOPPED)
 		{
 			Thread = FRunnableThread::Create(TcpClientWorker, TEXT("TcpClientWorker"));

@@ -22,6 +22,10 @@ void UUnrealDemoGameInstance::Shutdown()
 	{
 		TcpClient->StopWorker();
 		TcpClient->ShutdownClient();
+		
+	}
+	if(TcpClient.Get() != nullptr && TcpClient.IsValid())
+	{
 		TcpClient.Reset();
 	}
 	
@@ -94,8 +98,10 @@ EGameServiceConnectionStatus UUnrealDemoGameInstance::CloseConnection()
 		{
 			
 			Socket->Close();
-
-			Socket.Reset();
+			if(Socket.Get()!=nullptr && Socket.IsValid())
+			{
+				Socket.Reset();
+			}
 			GameServiceConnectionStatus = EGameServiceConnectionStatus::CSTATUS_NOT_CONNECTED;
 		}
 	}

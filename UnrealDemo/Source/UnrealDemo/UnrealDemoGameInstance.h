@@ -9,6 +9,7 @@
 #include "MultichannelTcpReceiver.h"
 #include "MultichannelTcpSender.h"
 #include "TcpClient.h"
+#include "SocketSubsystem.h"
 
 #include "UnrealDemoGameInstance.generated.h"
 
@@ -22,20 +23,18 @@ class UNREALDEMO_API UUnrealDemoGameInstance : public UGameInstance
 	GENERATED_BODY()
 
 public:
+	
 	virtual void Init() override;
 	virtual void Shutdown() override;
-	UFUNCTION(BlueprintCallable, Category="GameServices")
-	EGameServiceConnectionStatus GetGameServiceConnectionStatus() { return GameServiceConnectionStatus; };
-	UFUNCTION(BlueprintCallable, Category = "GameServices")
-	EGameServiceConnectionStatus ConnectToGameService();
-	UFUNCTION(BlueprintCallable, Category = "GameServices")
-	EGameServiceConnectionStatus ResetConnectionError();
-	UFUNCTION(BlueprintCallable, Category = "GameServices")
-	EGameServiceConnectionStatus CloseConnection();
-	
+	UFUNCTION(BlueprintCallable, Category = "GameServices-TcpClient")
+	void SetupTcpClient();
+	UFUNCTION(BlueprintCallable, Category = "GameServices-TcpClient")
+	void TeardownTcpClient();
+	UFUNCTION(BlueprintCallable, Category = "GameServices-TcpClient")
+	UTcpClient* GetTcpClient();
+
 private:
-	TSharedPtr<FSocket> Socket;
-	TSharedPtr<UTcpClient> TcpClient;
-	TSharedRef<FInternetAddr> GetGameServiceConnectionAddress();
-	EGameServiceConnectionStatus GameServiceConnectionStatus = EGameServiceConnectionStatus::CSTATUS_NOT_INITALIZED;
+	TSharedPtr<FSocket, ESPMode::ThreadSafe> Socket;
+	UPROPERTY()
+	UTcpClient* TcpClient = nullptr;
 };

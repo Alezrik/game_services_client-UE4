@@ -15,31 +15,27 @@
 class UNREALDEMO_API TcpClientWorker : public FRunnable
 {
 public:
-	TcpClientWorker(TSharedPtr<FSocket> Socket)
-	{
-		this->Socket = Socket;
-		this->Serializer = NewObject<UBinarySerializer>();
-		this->DeSerializer = NewObject<UBinaryDeSerializer>();
-		this->ClientSenderPtr = new TcpClientSender(this->Socket);
-		this->CommandProcessorPtr = new TcpCommandProcessor();
-
-	};
+	TcpClientWorker(TSharedPtr<FSocket, ESPMode::ThreadSafe> Socket);
 	void FlushAndComplete() { ExecuteLoop = false; };
 	virtual bool Init() override;
 	virtual uint32 Run() override;
 	virtual void Stop() override;
-
-	//void SendMessage(TArray<uint8> Message);
+	
+	UFUNCTION()
+	void OnTcpClientData(int32 BytesSent);
 
 private:
 	bool ExecuteLoop = false;
-	TWeakPtr<FSocket> Socket;
+	TWeakPtr<FSocket, ESPMode::ThreadSafe> Socket;
 	TQueue<TArray<uint8>, EQueueMode::Spsc> ReceiveMessageQueue;
 	UBinarySerializer* Serializer;
 	UBinaryDeSerializer* DeSerializer;
 	FRunnableThread* SendThread = nullptr;
 	FRunnableThread* CmdProcessThread = nullptr;
-
+	UPROPERTY()
 	TcpCommandProcessor* CommandProcessorPtr = nullptr;
+	UPROPERTY()
 	TcpClientSender* ClientSenderPtr = nullptr;
+	FDateTime LastActivity;
+	
 };

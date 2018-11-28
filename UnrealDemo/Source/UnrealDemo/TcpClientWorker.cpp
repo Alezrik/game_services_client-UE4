@@ -6,6 +6,16 @@
 #include "TcpCommandProcessor.h"
 #include "RunnableThread.h"
 
+TcpClientWorker::TcpClientWorker(TSharedPtr<FSocket, ESPMode::ThreadSafe> Socket)
+{
+	this->Socket = Socket;
+	this->Serializer = NewObject<UBinarySerializer>();
+	this->DeSerializer = NewObject<UBinaryDeSerializer>();
+	this->ClientSenderPtr = new TcpClientSender(this->Socket);
+	this->ClientSenderPtr->TcpClient_OnSendData.AddRaw(this, &TcpClientWorker::OnTcpClientData);
+	this->CommandProcessorPtr = new TcpCommandProcessor(ClientSenderPtr);
+}
+
 bool TcpClientWorker::Init()
 {
 	return true;
@@ -14,9 +24,9 @@ uint32 TcpClientWorker::Run()
 {
 	ExecuteLoop = true;
 	FDateTime StartTIme = FDateTime::Now();
-	FDateTime LastActivity = FDateTime::Now();
 	SendThread = FRunnableThread::Create(ClientSenderPtr, TEXT("TcpClientSender"));
 	CmdProcessThread = FRunnableThread::Create(CommandProcessorPtr, TEXT("TcpCommandProcessor"));
+	LastActivity = FDateTime::Now();
 	while(ExecuteLoop)
 	{
 		uint8 DataIn[1024];
@@ -28,14 +38,13 @@ uint32 TcpClientWorker::Run()
 		FTimespan HeartBeatCheck = FDateTime::Now() - LastActivity;
 		if(Socket.IsValid())
 		{
-			if (HeartBeatCheck.GetTotalSeconds() > 4)
+			if (HeartBeatCheck.GetTotalSeconds() > 4 && ClientSenderPtr->HasMessagesQueued() == false)
 			{
 				TArray<uint8> HeartBeatData = Serializer->GetCClinetHeartbeatMessage();
 				this->ClientSenderPtr->SendMessage(HeartBeatData);
-				LastActivity = FDateTime::Now();
 			}
 
-			TSharedPtr<FSocket> SocketPtr = Socket.Pin();
+			TSharedPtr<FSocket, ESPMode::ThreadSafe> SocketPtr = Socket.Pin();
 			if(SocketPtr.IsValid())
 			{
 				
@@ -43,7 +52,6 @@ uint32 TcpClientWorker::Run()
 				bool hasData = SocketPtr->HasPendingData(DataAvailable);
 				if (hasData)
 				{
-					LastActivity = FDateTime::Now();
 					SocketPtr->Recv(DataIn, DataAvailable, BytesRead);
 					UE_LOG(LogTemp, Warning, TEXT("Socket Receive: %d"), DataAvailable);
 					TArray<uint8> ReceivedData;
@@ -71,4 +79,10 @@ void TcpClientWorker::Stop()
 
 
 }
+
+void TcpClientWorker::OnTcpClientData(int32 BytesSent)
+{
+	LastActivity = FDateTime::Now();
+}
+
 

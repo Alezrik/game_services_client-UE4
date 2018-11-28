@@ -2,6 +2,11 @@
 
 #include "TcpCommandProcessor.h"
 
+TcpCommandProcessor::TcpCommandProcessor(TcpClientSender* sender)
+{
+	Sender = sender;
+}
+
 bool TcpCommandProcessor::Init()
 {
 	return true;

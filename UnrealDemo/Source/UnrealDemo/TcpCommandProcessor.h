@@ -6,13 +6,14 @@
 #include "UObject/NoExportTypes.h"
 #include "Runnable.h"
 #include "Sockets.h"
-
+#include "TcpClientSender.h"
 /**
  * 
  */
 class UNREALDEMO_API TcpCommandProcessor : public FRunnable
 {
 public:
+	TcpCommandProcessor(TcpClientSender* sender);
 	virtual bool Init() override;
 	virtual uint32 Run() override;
 	virtual void Stop() override;
@@ -21,4 +22,5 @@ public:
 private:
 	bool ExecuteLoop = false;
 	TWeakPtr<FSocket> Socket;
+	TcpClientSender* Sender;
 };

@@ -1,6 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "TcpClientSender.h"
+#include "SocketSubsystem.h"
+
+
+TcpClientSender::TcpClientSender(TWeakPtr<FSocket, ESPMode::ThreadSafe> socket)
+{
+	this->Socket = socket;
+}
 
 bool TcpClientSender::Init()
 {
@@ -12,11 +19,25 @@ void TcpClientSender::Stop()
 	ExecuteLoop = false;
 }
 
+void TcpClientSender::FlushAndComplete()
+{
+	ExecuteLoop = false;
+}
+
+void TcpClientSender::SendMessage(TArray<uint8> message)
+{
+	SendMessageQueue.Enqueue(message);
+}
+
+bool TcpClientSender::HasMessagesQueued()
+{
+	return !(SendMessageQueue.IsEmpty());
+}
+
 
 uint32 TcpClientSender::Run()
 {
 	FDateTime StartTIme = FDateTime::Now();
-	FDateTime LastActivity = FDateTime::Now();
 	ExecuteLoop = true;
 	while(ExecuteLoop)
 	{
@@ -29,13 +50,27 @@ uint32 TcpClientSender::Run()
 					int32 BytesSent;
 					TArray<uint8> Message;
 					SendMessageQueue.Dequeue(Message);
-					TSharedPtr<FSocket> SocketPtr = Socket.Pin();
-					SocketPtr->Send(Message.GetData(), Message.Num(), BytesSent);
-					LastActivity = FDateTime::Now();
-					UE_LOG(LogTemp, Warning, TEXT("Heart Beat: %d, datasize: %d"), BytesSent, Message.Num());
+					TSharedPtr<FSocket, ESPMode::ThreadSafe> SocketPtr = Socket.Pin();
+					if(SocketPtr.IsValid())
+					{
+						bool success = SocketPtr->Send(Message.GetData(), Message.Num(), BytesSent);
+						if(success)
+						{
+							if(TcpClient_OnSendData.IsBound())
+							{
+								TcpClient_OnSendData.Broadcast(BytesSent);
+							}
+							UE_LOG(LogTemp, Warning, TEXT("Heart Beat: %d, datasize: %d"), BytesSent, Message.Num());
+							
+						}
+						
+					}
+					
 				}
 			}
 		}
+		
 	}
+	Socket = nullptr;
 	return 0;
 }

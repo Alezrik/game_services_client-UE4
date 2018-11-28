@@ -1,74 +1,144 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "TcpClient.h"
+#include "IPv4Address.h"
+#include "SocketSubsystem.h"
 
-UTcpClient::UTcpClient(const FObjectInitializer& ObjectInitializer)
-{
-	ClientStatus = ETcpClientStatus::CCLIENT_NOT_INITIALIZED;
-}
 
-ETcpClientStatus UTcpClient::InitializeClient(TSharedPtr<FSocket> Socket)
+ETcpClientStatus UTcpClient::InitializeClient(TSharedPtr<FSocket, ESPMode::ThreadSafe> ConfiguredSocket)
 {
-	if(Socket.IsValid() && Socket->GetConnectionState() == ESocketConnectionState::SCS_Connected && ClientStatus == ETcpClientStatus::CCLIENT_NOT_INITIALIZED)
+	if(ConfiguredSocket.IsValid())
 	{
-		this->Socket = Socket;
-		TcpClientWorker = new ::TcpClientWorker(Socket);
-		ClientStatus = ETcpClientStatus::CCLIENT_INITIALIZED;
+		Socket = ConfiguredSocket;
+		if(Socket.IsValid())
+		{
+			TcpClientWorker = new ::TcpClientWorker(Socket.Pin());
+
+		}		
 	}
-	return ClientStatus;
+	return GetClientStatus();
 }
 
 ETcpClientStatus UTcpClient::ShutdownClient()
 {
-	if (Socket != nullptr && Socket.IsValid())
+	if (Socket.IsValid())
 	{
-		TSharedPtr<FSocket> SocketPtr = Socket.Pin();
-		if(SocketPtr->GetConnectionState() == ESocketConnectionState::SCS_Connected)
-		{
-			if (ClientStatus == ETcpClientStatus::CCLIENT_INITIALIZED || ClientStatus == ETcpClientStatus::CCLINET_STOPPED)
-			{
-				Socket = nullptr;
-				ClientStatus = ETcpClientStatus::CCLIENT_NOT_INITIALIZED;
-				delete TcpClientWorker;
-				TcpClientWorker = nullptr;
-
-			}
-
-
-		}
+		Socket.Reset();
+		Socket = nullptr;
 	}
-	return ClientStatus;
+	if(TcpClientWorker)
+	{
+		delete TcpClientWorker;
+		TcpClientWorker = nullptr;
+	}
+	return GetClientStatus();
 }
 
-ETcpClientStatus UTcpClient::StartWorker()
+EGameServiceConnectionStatus UTcpClient::ConnectToGameService()
 {
-	if(Socket != nullptr && Socket.IsValid() && Thread == nullptr)
+	if(Socket.IsValid())
 	{
-		TSharedPtr<FSocket> SocketPtr = Socket.Pin();
-		if (SocketPtr->GetConnectionState() == ESocketConnectionState::SCS_Connected)
+		TSharedPtr<FSocket, ESPMode::ThreadSafe> SocketPtr = Socket.Pin();
+		if(SocketPtr.IsValid())
 		{
-
+			if(SocketPtr->GetConnectionState() != ESocketConnectionState::SCS_Connected)
+			{
+				bool success = SocketPtr->Connect(*GetGameServiceConnectionAddress());
+				if (success)
+				{
+					TcpClientWorkerThread = FRunnableThread::Create(TcpClientWorker, TEXT("TcpClientWorker"));
+				}
+			}
+			
 		}
-		if(ClientStatus == ETcpClientStatus::CCLIENT_INITIALIZED || ClientStatus == ETcpClientStatus::CCLINET_STOPPED)
+	}
+	return GetGameServiceConnectionStatus();
+}
+
+EGameServiceConnectionStatus UTcpClient::DisconnectFromGameService()
+{
+	if(TcpClientWorkerThread)
+	{
+		TcpClientWorker->FlushAndComplete();
+		TcpClientWorkerThread->WaitForCompletion();
+		delete TcpClientWorkerThread;
+		TcpClientWorkerThread = nullptr;
+	}
+	if(Socket.IsValid())
+	{
+		TSharedPtr<FSocket, ESPMode::ThreadSafe> SocketPtr = Socket.Pin();
+		if(SocketPtr.IsValid())
 		{
-			Thread = FRunnableThread::Create(TcpClientWorker, TEXT("TcpClientWorker"));
-			ClientStatus = ETcpClientStatus::CCLIENT_RUNNING;
+			if (SocketPtr->GetConnectionState() == ESocketConnectionState::SCS_Connected)
+			{
+				bool success = SocketPtr->Close();
+				UE_LOG(LogTemp, Warning, TEXT("Closed Socket Success is %s"), success? TEXT("true"):TEXT("false"));
+				
+			}
 		}
 		
 	}
-	return ClientStatus;
-	
+	return GetGameServiceConnectionStatus();
 }
 
-ETcpClientStatus UTcpClient::StopWorker()
+
+ETcpClientStatus UTcpClient::GetClientStatus()
 {
-	if(ClientStatus == ETcpClientStatus::CCLIENT_RUNNING)
+	if(Socket.IsValid() && TcpClientWorker)
 	{
-		TcpClientWorker->FlushAndComplete();
-		Thread->WaitForCompletion();
-		delete Thread;
-		Thread = nullptr;
-		ClientStatus = ETcpClientStatus::CCLINET_STOPPED;
+		if(TcpClientWorkerThread)
+		{
+		
+			return ETcpClientStatus::CCLIENT_RUNNING;
+			
+		}
+		else
+		{
+			return ETcpClientStatus::CCLINET_STOPPED;
+		}
 	}
-	return ClientStatus;
+	else
+	{
+		return ETcpClientStatus::CCLIENT_NOT_INITIALIZED;
+	}	
 }
+
+EGameServiceConnectionStatus UTcpClient::GetGameServiceConnectionStatus()
+{
+	if(Socket.IsValid() && TcpClientWorker)
+	{
+		TSharedPtr<FSocket, ESPMode::ThreadSafe> SocketPtr = Socket.Pin();
+		if(SocketPtr.IsValid())
+		{
+			switch(SocketPtr->GetConnectionState())
+			{
+			case ESocketConnectionState::SCS_Connected:
+				return EGameServiceConnectionStatus::CSTATUS_CONNECTED_TO_SERVER;
+			case ESocketConnectionState::SCS_NotConnected:
+				return EGameServiceConnectionStatus::CSTATUS_NOT_CONNECTED;
+			case ESocketConnectionState::SCS_ConnectionError:
+				return EGameServiceConnectionStatus::CSTATUS_CONNECTION_ERROR;
+			default:
+				return EGameServiceConnectionStatus::CSTATUS_UNKNOWN;
+			}
+		}
+		else
+		{
+			return EGameServiceConnectionStatus::CSTATUS_NOT_INITALIZED;
+		}
+	}
+	else
+	{
+		return EGameServiceConnectionStatus::CSTATUS_NOT_INITALIZED;
+	}
+}
+TSharedRef<FInternetAddr> UTcpClient::GetGameServiceConnectionAddress()
+{
+	FIPv4Address ip(127, 0, 0, 1);
+	TSharedRef<FInternetAddr> addr = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateInternetAddr();
+	addr->SetIp(ip.Value);
+	addr->SetPort(8005);
+	return addr;
+}
+
+

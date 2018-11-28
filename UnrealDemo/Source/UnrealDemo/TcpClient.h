@@ -8,28 +8,39 @@
 #include "Sockets.h"
 #include "MultichannelTcpReceiver.h"
 #include "TcpClientWorker.h"
+#include "UnrealDemoConnectionStatus.h"
 #include "TcpClient.generated.h"
 
 
 /**
  * 
  */
-UCLASS()
+UCLASS(BlueprintType)
 class UNREALDEMO_API UTcpClient : public UObject
 {
 	GENERATED_BODY()
 
 public:
-	UTcpClient(const FObjectInitializer & ObjectInitializer);
-	ETcpClientStatus GetClientStatus() { return ClientStatus; };
-	ETcpClientStatus InitializeClient(TSharedPtr<FSocket> Socket);
+	UFUNCTION(BlueprintCallable, Category = "GameServices-TcpClient")
+	ETcpClientStatus GetClientStatus();
+
+	UFUNCTION(BlueprintCallable, Category = "GameServices-TcpClient")
+	EGameServiceConnectionStatus GetGameServiceConnectionStatus();
+
+	ETcpClientStatus InitializeClient(TSharedPtr<FSocket, ESPMode::ThreadSafe> Socket);
+	UFUNCTION(BlueprintCallable, Category = "GameServices-TcpClient")
 	ETcpClientStatus ShutdownClient();
-	ETcpClientStatus StartWorker();
-	ETcpClientStatus StopWorker();
+	UFUNCTION(BlueprintCallable, Category = "GameServices-TcpClient")
+	EGameServiceConnectionStatus ConnectToGameService();
+	UFUNCTION(BlueprintCallable, Category = "GameServices-TcpClient")
+	EGameServiceConnectionStatus DisconnectFromGameService();
+
+
 private:
-	ETcpClientStatus ClientStatus;
-	TWeakPtr<FSocket> Socket;
+	TSharedRef<FInternetAddr> GetGameServiceConnectionAddress();
+
+	TWeakPtr<FSocket, ESPMode::ThreadSafe> Socket;
 	TcpClientWorker* TcpClientWorker = nullptr;
-	FRunnableThread* Thread = nullptr;
+	FRunnableThread* TcpClientWorkerThread = nullptr;
 	
 };

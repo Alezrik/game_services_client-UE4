@@ -20,13 +20,19 @@ public:
 	virtual bool Init() override;
 	virtual uint32 Run() override;
 	virtual void Stop() override;
+	UFUNCTION()
 	void FlushAndComplete();;
+	UFUNCTION()
 	void SendMessage(TArray<uint8> message);
+	UFUNCTION()
 	bool HasMessagesQueued();
 	FTcpClientSendData TcpClient_OnSendData;
 
 private:
+	UPROPERTY()
 	TQueue<TArray<uint8>, EQueueMode::Spsc> SendMessageQueue;
+	UPROPERTY()
 	bool ExecuteLoop = false;
+	UPROPERTY()
 	TWeakPtr<FSocket, ESPMode::ThreadSafe> Socket;
 };

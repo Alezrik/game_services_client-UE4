@@ -38,7 +38,6 @@ public:
 
 private:
 	TSharedRef<FInternetAddr> GetGameServiceConnectionAddress();
-
 	TWeakPtr<FSocket, ESPMode::ThreadSafe> Socket;
 	TcpClientWorker* TcpClientWorker = nullptr;
 	FRunnableThread* TcpClientWorkerThread = nullptr;

@@ -15,6 +15,7 @@ class UNREALDEMO_API UBinarySerializer : public UObject
 	GENERATED_BODY()
 
 public:
+	UFUNCTION()
 	TArray<uint8> GetCClinetHeartbeatMessage();
 			
 private:

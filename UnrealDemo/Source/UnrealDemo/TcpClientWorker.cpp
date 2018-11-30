@@ -58,8 +58,9 @@ uint32 TcpClientWorker::Run()
 					for(int x =0;x<BytesRead;x++)
 					{
 						ReceivedData.Add(DataIn[x]);
-						ReceiveMessageQueue.Enqueue(ReceivedData);
+						
 					}
+					CommandProcessorPtr->ProcessBytes(ReceivedData);
 				}	
 			}
 		}

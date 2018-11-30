@@ -7,6 +7,8 @@
 #include "Runnable.h"
 #include "Sockets.h"
 #include "TcpClientSender.h"
+#include "BinaryDeSerializer.h"
+
 /**
  * 
  */
@@ -17,10 +19,21 @@ public:
 	virtual bool Init() override;
 	virtual uint32 Run() override;
 	virtual void Stop() override;
-	void FlushAndComplete() { ExecuteLoop = false; };
-
+	UFUNCTION()
+	void FlushAndComplete();
+	UFUNCTION()
+	void ProcessBytes(TArray<uint8> MessageBytes);
 private:
+	UPROPERTY()
 	bool ExecuteLoop = false;
-	TWeakPtr<FSocket> Socket;
+	UPROPERTY()
 	TcpClientSender* Sender;
+	UPROPERTY()
+	TQueue<TArray<uint8>, EQueueMode::Spsc> ReceiveMessageQueue;
+	UFUNCTION()
+	uint64 BinaryToUint64(uint8* var);
+	UFUNCTION()
+	uint32 BinaryToUint32(uint8* var);
+	UPROPERTY()
+	UBinaryDeSerializer* DeSerializer;
 };

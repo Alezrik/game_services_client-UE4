@@ -13,92 +13,42 @@
 
 void UUnrealDemoGameInstance::Init()
 {
-	GameServiceConnectionStatus = EGameServiceConnectionStatus::CSTATUS_NOT_CONNECTED;
-	TcpClient = MakeShareable(NewObject<UTcpClient>());
+	SetupTcpClient();
 }
 void UUnrealDemoGameInstance::Shutdown()
 {
-	if(TcpClient.IsValid())
-	{
-		TcpClient->StopWorker();
-		TcpClient->ShutdownClient();
-		TcpClient.Reset();
-	}
-	
+	TeardownTcpClient();
 }
 
-
-
-TSharedRef<FInternetAddr> UUnrealDemoGameInstance::GetGameServiceConnectionAddress()
-{
-	FIPv4Address ip(127, 0, 0, 1);
-	TSharedRef<FInternetAddr> addr = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateInternetAddr();
-	addr->SetIp(ip.Value);
-	addr->SetPort(8005);
-	return addr;
-}
-
-EGameServiceConnectionStatus UUnrealDemoGameInstance::ConnectToGameService()
+void UUnrealDemoGameInstance::SetupTcpClient()
 {
 	Socket = MakeShareable(ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateSocket(NAME_Stream, TEXT("default"), false));
-	Socket->SetNonBlocking(true);
-	if(GameServiceConnectionStatus != EGameServiceConnectionStatus::CSTATUS_NOT_CONNECTED)
-	{
-		return GameServiceConnectionStatus;
-	}
-
-	bool connected = Socket->Connect(*GetGameServiceConnectionAddress());
-	if (connected == true)
-	{
-		GameServiceConnectionStatus = EGameServiceConnectionStatus::CSTATUS_CONNECTED_TO_SERVER;
-		ETcpClientStatus clients_status = TcpClient->InitializeClient(Socket);
-		if(clients_status == ETcpClientStatus::CCLIENT_INITIALIZED)
-		{
-			clients_status = TcpClient->StartWorker();
-			if(clients_status!=ETcpClientStatus::CCLIENT_RUNNING)
-			{
-				TcpClient->ShutdownClient();
-				Socket.Reset();
-				GameServiceConnectionStatus = EGameServiceConnectionStatus::CSTATUS_CONNECTION_ERROR;
-			}
-		}
-		else
-		{
-			Socket.Reset();
-			GameServiceConnectionStatus = EGameServiceConnectionStatus::CSTATUS_CONNECTION_ERROR;
-		}
-	}
-	else
-	{
-		GameServiceConnectionStatus = EGameServiceConnectionStatus::CSTATUS_CONNECTION_ERROR;
-	}
-	return GameServiceConnectionStatus;
-	
+	TcpClient = NewObject<UTcpClient>();
+	TcpClient->InitializeClient(Socket);
 }
 
-EGameServiceConnectionStatus UUnrealDemoGameInstance::ResetConnectionError()
+void UUnrealDemoGameInstance::TeardownTcpClient()
 {
-	if (GameServiceConnectionStatus != EGameServiceConnectionStatus::CSTATUS_CONNECTION_ERROR)
-		return GameServiceConnectionStatus;
-	GameServiceConnectionStatus = EGameServiceConnectionStatus::CSTATUS_NOT_CONNECTED;
-	return GameServiceConnectionStatus;
-}
-
-EGameServiceConnectionStatus UUnrealDemoGameInstance::CloseConnection()
-{
-	if (GameServiceConnectionStatus == EGameServiceConnectionStatus::CSTATUS_CONNECTED_TO_SERVER)
+	if(TcpClient)
 	{
-		TcpClient->StopWorker();
 		TcpClient->ShutdownClient();
-		if(Socket.IsValid() == true && Socket->GetConnectionState() == ESocketConnectionState::SCS_Connected)
-			Socket->Close();
-		if(Socket.IsValid())
-			Socket.Reset();
-		GameServiceConnectionStatus = EGameServiceConnectionStatus::CSTATUS_NOT_CONNECTED;
+		TcpClient = nullptr;
 	}
-	return GameServiceConnectionStatus;
+	if(Socket.IsValid())
+	{
+		Socket.Reset();
+		Socket = nullptr;
+	}
+	
 	
 }
+
+UTcpClient* UUnrealDemoGameInstance::GetTcpClient()
+{
+	return TcpClient;
+}
+
+
 
 
 

@@ -9,8 +9,8 @@
 #include "MultichannelTcpReceiver.h"
 #include "MultichannelTcpSender.h"
 #include "TcpClient.h"
+#include "TcpClientTest.h"
 #include "SocketSubsystem.h"
-
 #include "UnrealDemoGameInstance.generated.h"
 
 
@@ -37,4 +37,5 @@ private:
 	TSharedPtr<FSocket, ESPMode::ThreadSafe> Socket;
 	UPROPERTY()
 	UTcpClient* TcpClient = nullptr;
+	UTcpClientTest* TcpClientTest = nullptr;
 };

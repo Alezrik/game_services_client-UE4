@@ -5,3 +5,4 @@
 * Get connection to GameService
 * Send Heartbeats to GameService
 * Parse Binary from GameService
+* Game Client can now Log into the Game Service

@@ -15,6 +15,9 @@
 class UNREALDEMO_API TcpCommandProcessor : public FRunnable
 {
 public:
+	DECLARE_MULTICAST_DELEGATE_OneParam(FTcpRecSmsgAuthenticateChallenge, FGameServiceMessage);
+	DECLARE_MULTICAST_DELEGATE_OneParam(FTcpRecSmsgAuthenticate, FGameServiceMessage);
+
 	TcpCommandProcessor(TcpClientSender* sender);
 	virtual bool Init() override;
 	virtual uint32 Run() override;
@@ -23,6 +26,8 @@ public:
 	void FlushAndComplete();
 	UFUNCTION()
 	void ProcessBytes(TArray<uint8> MessageBytes);
+	FTcpRecSmsgAuthenticateChallenge OnReceiveServerAuthenticateChallenge;
+	FTcpRecSmsgAuthenticate OnReceiveServerAuthenticate;
 private:
 	UPROPERTY()
 	bool ExecuteLoop = false;

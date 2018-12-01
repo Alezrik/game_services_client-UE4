@@ -16,8 +16,13 @@ class UNREALDEMO_API UBinarySerializer : public UObject
 
 public:
 	UFUNCTION()
-	TArray<uint8> GetCClinetHeartbeatMessage();
-			
+	TArray<uint8> GetCmsgHeartbeatMessage();
+	UFUNCTION()
+	TArray<uint8> GetGmsgHeartbeatMessage();
+	UFUNCTION()
+	TArray<uint8> GetCmsgAuthenticateChallenge(FString userName, uint32 ChallengeKey);
+	UFUNCTION()
+	TArray<uint8> GetCmsgAuthenticate(FString password, FString salt, uint32 ClientKey, uint32 ServerKey);
 private:
 	uint8* UInt32ToBinary(uint32 integer);
 	uint8* UInt64ToBinary(uint64 integer);

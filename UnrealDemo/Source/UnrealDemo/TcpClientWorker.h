@@ -8,6 +8,7 @@
 #include "BinaryDeSerializer.h"
 #include "TcpCommandProcessor.h"
 #include "TcpClientSender.h"
+#include "TcpClientAuthentication.h"
 
 /**
  * 
@@ -22,6 +23,9 @@ public:
 	virtual uint32 Run() override;
 	virtual void Stop() override;
 	
+	UFUNCTION()
+	UTcpClientAuthentication* GetClientAuthentication();
+
 	UFUNCTION()
 	void OnTcpClientData(int32 BytesSent);
 
@@ -44,5 +48,7 @@ private:
 	TcpClientSender* ClientSenderPtr = nullptr;
 	UPROPERTY()
 	FDateTime LastActivity;
+	UPROPERTY()
+	UTcpClientAuthentication* ClientAuthentication = nullptr;
 	
 };

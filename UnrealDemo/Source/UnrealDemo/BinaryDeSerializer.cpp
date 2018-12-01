@@ -8,7 +8,6 @@ FGameServiceMessage UBinaryDeSerializer::DeserializeBinary(TArray<uint8> Binary)
 	uint8 Header[8];
 	for (int x = 0; x < 8; x++)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Byte: %d is: %d"), x, Binary[x]);
 		Header[x] = Binary[x];
 	}
 	uint8 MessageSizeBin[4];
@@ -18,7 +17,6 @@ FGameServiceMessage UBinaryDeSerializer::DeserializeBinary(TArray<uint8> Binary)
 	}
 	uint32 MessageSize = BinaryToUint32(MessageSizeBin);
 	uint64 Command_ID = BinaryToUint64(Header);
-	UE_LOG(LogTemp, Warning, TEXT("Received Cmd: %d with size: %d"), Command_ID, MessageSize);
 	TArray<uint8> Contents;
 	for(uint32 x =0;x<MessageSize;x++)
 	{
@@ -27,8 +25,25 @@ FGameServiceMessage UBinaryDeSerializer::DeserializeBinary(TArray<uint8> Binary)
 
 	GameServiceMessage.CommandId = Command_ID;
 	GameServiceMessage.MessageLength = MessageSize;
-	GameServiceMessage.MessageContents = Contents;
+	GameServiceMessage.MessageContents = ParseMessageContents(Command_ID, Contents);
 	return GameServiceMessage;
+}
+
+TMap<FString, FString> UBinaryDeSerializer::ParseMessageContents(uint64 Command_ID, TArray<uint8> MessageContents)
+{
+	switch(Command_ID)
+	{
+	case 2:
+		return ParseSmsgAuthenticateChallenge(MessageContents);
+	case 5:
+		return ParseSmsgAuthenticate(MessageContents);
+	case 101:
+		//SMSG_HEARTBEAT
+		return ParseSmsgHeartbeat(MessageContents);
+	default:
+		return TMap<FString, FString>();
+	}
+	
 }
 
 uint64 UBinaryDeSerializer::BinaryToUint64(uint8* var)
@@ -56,4 +71,72 @@ uint32 UBinaryDeSerializer::BinaryToUint32(uint8* var)
 		(((uint64)var[lowest_pos + 2]) << 8) |
 		(((uint64)var[lowest_pos + 3]) << 0);
 
+}
+
+TMap<FString, FString> UBinaryDeSerializer::ParseSmsgHeartbeat(TArray<uint8> MessageContents)
+{
+	TMap<FString, FString> Message;
+	uint8 MessageValueInt = MessageContents[0];
+	FString MessageValue = FString::FromInt(MessageValueInt);
+	Message.Add("HeartbeatMessage",  MessageValue);
+	return Message;
+}
+TMap<FString, FString> UBinaryDeSerializer::ParseSmsgAuthenticateChallenge(TArray<uint8> MessageContents)
+{
+	TMap<FString, FString> Message;
+	uint8 ServerRandBin[4];
+	for(int x =0;x<4;x++)
+	{
+		ServerRandBin[x] = MessageContents[x];
+	}
+	uint32 ServerRand = BinaryToUint32(ServerRandBin);
+	uint8 SaltLen = MessageContents[4];
+	TArray<uint8> SaltBin;
+	for(int x=0;x<SaltLen;x++)
+	{
+		int offset = 5;
+		SaltBin.Add(MessageContents[x + offset]);
+	}
+	FString Salt = UTF8_TO_TCHAR(SaltBin.GetData());
+	/*Salt.Empty(SaltLen);
+	for(int x=0;x<SaltBin.Num();x++)
+	{
+		int16 value = SaltBin.GetData()[x];
+		value += 1;
+		Salt += UTF8_TO_TCHAR(value);
+	}*/
+
+	Message.Add("ServerKey", FString::FromInt(ServerRand));
+	Message.Add("Salt", Salt);
+	return Message;
+
+
+	
+}
+
+TMap<FString, FString> UBinaryDeSerializer::ParseSmsgAuthenticate(TArray<uint8> MessageContents)
+{
+	TMap<FString, FString> Message;
+	if(MessageContents[0] == 1)
+	{
+		Message.Add("success", "true");
+		uint8 TokenLenBin[4];
+		for (int x = 0; x < 4; x++)
+		{
+			TokenLenBin[x] = MessageContents[x + 1];
+		}
+		uint32 TokenLen = BinaryToUint32(TokenLenBin);
+		TArray<uint8> TokenBin;
+		for(uint32 x = 0;x<TokenLen;x++)
+		{
+			TokenBin.Add(MessageContents[x + 5]);
+		}
+		Message.Add("token", UTF8_TO_TCHAR(TokenBin.GetData()));
+	}
+	else
+	{
+		Message.Add("success", "false");
+	}
+	
+	return Message;
 }

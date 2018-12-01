@@ -14,6 +14,10 @@ TcpClientWorker::TcpClientWorker(TSharedPtr<FSocket, ESPMode::ThreadSafe> Socket
 	this->ClientSenderPtr = new TcpClientSender(this->Socket);
 	this->ClientSenderPtr->TcpClient_OnSendData.AddRaw(this, &TcpClientWorker::OnTcpClientData);
 	this->CommandProcessorPtr = new TcpCommandProcessor(ClientSenderPtr);
+	this->ClientAuthentication = NewObject<UTcpClientAuthentication>();
+	this->ClientAuthentication->Initialize(this->ClientSenderPtr);
+	this->CommandProcessorPtr->OnReceiveServerAuthenticateChallenge.AddUObject(this->ClientAuthentication, &UTcpClientAuthentication::OnSmsgAuthenticateChallenge);
+	this->CommandProcessorPtr->OnReceiveServerAuthenticate.AddUObject(this->ClientAuthentication, &UTcpClientAuthentication::OnSmsgAuthenticate);
 }
 
 bool TcpClientWorker::Init()
@@ -40,7 +44,14 @@ uint32 TcpClientWorker::Run()
 		{
 			if (HeartBeatCheck.GetTotalSeconds() > 4 && ClientSenderPtr->HasMessagesQueued() == false)
 			{
-				TArray<uint8> HeartBeatData = Serializer->GetCClinetHeartbeatMessage();
+#ifdef UE_SERVER
+				//get game server heartbeat message
+				TArray<uint8> HeartBeatData = Serializer->GetGmsgHeartbeatMessage();
+#else
+				//get client heartbeat message
+				TArray<uint8> HeartBeatData = Serializer->GetCmsgHeartbeatMessage();
+
+#endif
 				this->ClientSenderPtr->SendMessage(HeartBeatData);
 			}
 
@@ -53,7 +64,6 @@ uint32 TcpClientWorker::Run()
 				if (hasData)
 				{
 					SocketPtr->Recv(DataIn, DataAvailable, BytesRead);
-					UE_LOG(LogTemp, Warning, TEXT("Socket Receive: %d"), DataAvailable);
 					TArray<uint8> ReceivedData;
 					for(int x =0;x<BytesRead;x++)
 					{
@@ -79,6 +89,11 @@ void TcpClientWorker::Stop()
 	ExecuteLoop = false;
 
 
+}
+
+UTcpClientAuthentication* TcpClientWorker::GetClientAuthentication()
+{
+	return ClientAuthentication;
 }
 
 void TcpClientWorker::OnTcpClientData(int32 BytesSent)

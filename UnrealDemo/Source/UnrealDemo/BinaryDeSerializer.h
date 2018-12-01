@@ -19,6 +19,11 @@ public:
 	FGameServiceMessage DeserializeBinary(TArray<uint8> Binary);
 
 private:
+	TMap<FString, FString> ParseMessageContents(uint64 Command_ID, TArray<uint8> MessageContents);
 	uint64 BinaryToUint64(uint8* var);
 	uint32 BinaryToUint32(uint8* var);
+
+	TMap<FString, FString> ParseSmsgHeartbeat(TArray<uint8> MessageContents);
+	TMap<FString, FString> ParseSmsgAuthenticateChallenge(TArray<uint8> MessageContents);
+	TMap<FString, FString> ParseSmsgAuthenticate(TArray<uint8> MessageContents);
 };

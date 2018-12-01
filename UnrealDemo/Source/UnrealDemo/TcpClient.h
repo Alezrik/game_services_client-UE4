@@ -35,11 +35,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GameServices-TcpClient")
 	EGameServiceConnectionStatus DisconnectFromGameService();
 
+	UFUNCTION(BlueprintCallable, Category = "GameServices-TcpClient")
+	UTcpClientAuthentication* GetAuthentication();
+
 
 private:
 	TSharedRef<FInternetAddr> GetGameServiceConnectionAddress();
 	TWeakPtr<FSocket, ESPMode::ThreadSafe> Socket;
 	TcpClientWorker* TcpClientWorker = nullptr;
 	FRunnableThread* TcpClientWorkerThread = nullptr;
+
 	
 };

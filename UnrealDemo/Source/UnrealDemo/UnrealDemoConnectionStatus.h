@@ -8,5 +8,3 @@ enum class EGameServiceConnectionStatus: uint8{
 	CSTATUS_UNKNOWN UMETA(DisplayName = "Unknown Problem")
 
 };
-
-

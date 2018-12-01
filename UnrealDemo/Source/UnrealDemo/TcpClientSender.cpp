@@ -60,7 +60,6 @@ uint32 TcpClientSender::Run()
 							{
 								TcpClient_OnSendData.Broadcast(BytesSent);
 							}
-							UE_LOG(LogTemp, Warning, TEXT("Heart Beat: %d, datasize: %d"), BytesSent, Message.Num());
 							
 						}
 						

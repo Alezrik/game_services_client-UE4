@@ -81,6 +81,11 @@ EGameServiceConnectionStatus UTcpClient::DisconnectFromGameService()
 	return GetGameServiceConnectionStatus();
 }
 
+UTcpClientAuthentication* UTcpClient::GetAuthentication()
+{
+	return this->TcpClientWorker->GetClientAuthentication();
+}
+
 
 ETcpClientStatus UTcpClient::GetClientStatus()
 {
@@ -140,5 +145,7 @@ TSharedRef<FInternetAddr> UTcpClient::GetGameServiceConnectionAddress()
 	addr->SetPort(8005);
 	return addr;
 }
+
+
 
 

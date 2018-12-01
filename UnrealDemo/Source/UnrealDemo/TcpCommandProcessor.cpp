@@ -39,8 +39,26 @@ uint32 TcpCommandProcessor::Run()
 				UnparsedBinary.Empty();
 			}
 			int32 EndMessageByte = BytesToProcess.Find('\0');
-			UE_LOG(LogTemp, Warning, TEXT("Received Bytes Len: %d, with EndMessageByte: %d, Endbyte value is: %d"), BytesToProcess.Num(), EndMessageByte, BytesToProcess.Last());
 			FGameServiceMessage GameServiceMessage = DeSerializer->DeserializeBinary(BytesToProcess);
+			switch(GameServiceMessage.CommandId)
+			{
+			case 2:
+				UE_LOG(LogTemp, Warning, TEXT("Received SMSG Auth Challenge Msg"));
+				if (OnReceiveServerAuthenticateChallenge.IsBound())
+				{
+					OnReceiveServerAuthenticateChallenge.Broadcast(GameServiceMessage);
+				}
+				break;
+
+			case 5:
+				UE_LOG(LogTemp, Warning, TEXT("Received SMSG Auth Msg"));
+				if(OnReceiveServerAuthenticate.IsBound())
+				{
+					OnReceiveServerAuthenticate.Broadcast(GameServiceMessage);
+				}
+				break;
+			}
+			
 			if(GameServiceMessage.MessageLength + 12 != BytesToProcess.Num())
 			{
 				for(int x = GameServiceMessage.MessageLength + 12;x<BytesToProcess.Num();x++)
@@ -48,6 +66,7 @@ uint32 TcpCommandProcessor::Run()
 					UnparsedBinary.Add(BytesToProcess[x]);
 				}
 			}
+			
 		}
 		
 	}

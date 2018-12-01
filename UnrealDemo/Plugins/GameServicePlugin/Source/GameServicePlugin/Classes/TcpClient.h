@@ -16,7 +16,7 @@
  * 
  */
 UCLASS(BlueprintType)
-class UNREALDEMO_API UTcpClient : public UObject
+class GAMESERVICEPLUGIN_API UTcpClient : public UObject
 {
 	GENERATED_BODY()
 

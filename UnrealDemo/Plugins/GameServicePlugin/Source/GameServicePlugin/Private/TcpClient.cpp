@@ -3,7 +3,7 @@
 #include "TcpClient.h"
 #include "IPv4Address.h"
 #include "SocketSubsystem.h"
-
+#include "IPAddress.h"
 
 ETcpClientStatus UTcpClient::InitializeClient(TSharedPtr<FSocket, ESPMode::ThreadSafe> ConfiguredSocket)
 {

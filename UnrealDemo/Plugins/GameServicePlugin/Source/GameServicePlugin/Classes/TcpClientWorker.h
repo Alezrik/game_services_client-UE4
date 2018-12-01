@@ -13,7 +13,7 @@
 /**
  * 
  */
-class UNREALDEMO_API TcpClientWorker : public FRunnable
+class GAMESERVICEPLUGIN_API TcpClientWorker : public FRunnable
 {
 public:
 	TcpClientWorker(TSharedPtr<FSocket, ESPMode::ThreadSafe> Socket);

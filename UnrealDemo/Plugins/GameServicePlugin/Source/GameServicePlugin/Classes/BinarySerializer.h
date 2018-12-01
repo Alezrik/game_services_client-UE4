@@ -10,7 +10,7 @@
  * 
  */
 UCLASS()
-class UNREALDEMO_API UBinarySerializer : public UObject
+class GAMESERVICEPLUGIN_API UBinarySerializer : public UObject
 {
 	GENERATED_BODY()
 

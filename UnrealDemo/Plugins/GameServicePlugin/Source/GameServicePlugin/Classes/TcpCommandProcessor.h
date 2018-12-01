@@ -12,7 +12,7 @@
 /**
  * 
  */
-class UNREALDEMO_API TcpCommandProcessor : public FRunnable
+class GAMESERVICEPLUGIN_API TcpCommandProcessor : public FRunnable
 {
 public:
 	DECLARE_MULTICAST_DELEGATE_OneParam(FTcpRecSmsgAuthenticateChallenge, FGameServiceMessage);

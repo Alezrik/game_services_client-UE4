@@ -11,7 +11,7 @@
 /**
  * 
  */
-class UNREALDEMO_API TcpClientSender :  public FRunnable
+class GAMESERVICEPLUGIN_API TcpClientSender :  public FRunnable
 {
 public:
 	DECLARE_MULTICAST_DELEGATE_OneParam(FTcpClientSendData, int32);

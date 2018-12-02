@@ -15,7 +15,7 @@
  * 
  */
 UCLASS()
-class UNREALDEMO_API UTcpClientAuthentication : public UObject
+class GAMESERVICEPLUGIN_API UTcpClientAuthentication : public UObject
 {
 	GENERATED_BODY()
 

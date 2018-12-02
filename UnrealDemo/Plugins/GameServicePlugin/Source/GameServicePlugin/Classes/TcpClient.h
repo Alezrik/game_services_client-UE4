@@ -9,6 +9,7 @@
 #include "MultichannelTcpReceiver.h"
 #include "TcpClientWorker.h"
 #include "UnrealDemoConnectionStatus.h"
+#include "TcpClientManager.h"
 #include "TcpClient.generated.h"
 
 
@@ -16,17 +17,12 @@
  * 
  */
 UCLASS(BlueprintType)
-class UNREALDEMO_API UTcpClient : public UObject
+class GAMESERVICEPLUGIN_API UTcpClient : public UObject
 {
 	GENERATED_BODY()
 
 public:
-	UFUNCTION(BlueprintCallable, Category = "GameServices-TcpClient")
-	ETcpClientStatus GetClientStatus();
-
-	UFUNCTION(BlueprintCallable, Category = "GameServices-TcpClient")
-	EGameServiceConnectionStatus GetGameServiceConnectionStatus();
-
+	
 	ETcpClientStatus InitializeClient(TSharedPtr<FSocket, ESPMode::ThreadSafe> Socket);
 	UFUNCTION(BlueprintCallable, Category = "GameServices-TcpClient")
 	ETcpClientStatus ShutdownClient();
@@ -37,6 +33,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "GameServices-TcpClient")
 	UTcpClientAuthentication* GetAuthentication();
+	UFUNCTION(BlueprintCallable, Category = "GameServices-TcpClient")
+	UTcpClientManager* GetClientManager();
 
 
 private:
@@ -44,6 +42,6 @@ private:
 	TWeakPtr<FSocket, ESPMode::ThreadSafe> Socket;
 	TcpClientWorker* TcpClientWorker = nullptr;
 	FRunnableThread* TcpClientWorkerThread = nullptr;
-
+	UTcpClientManager* TcpClientManager = nullptr;
 	
 };

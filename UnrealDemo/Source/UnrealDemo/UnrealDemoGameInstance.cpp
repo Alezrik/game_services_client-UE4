@@ -25,6 +25,7 @@ void UUnrealDemoGameInstance::SetupTcpClient()
 	Socket = MakeShareable(ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateSocket(NAME_Stream, TEXT("default"), false));
 	TcpClient = NewObject<UTcpClient>();
 	TcpClient->InitializeClient(Socket);
+	TcpClientTest = NewObject<UTcpClientTest>();
 }
 
 void UUnrealDemoGameInstance::TeardownTcpClient()

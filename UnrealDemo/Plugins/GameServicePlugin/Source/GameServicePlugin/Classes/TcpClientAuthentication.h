@@ -14,12 +14,17 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(BlueprintType, Blueprintable)
 class GAMESERVICEPLUGIN_API UTcpClientAuthentication : public UObject
 {
 	GENERATED_BODY()
 
+		DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAuthenticationStatusChange, ETcpClientAuthenticationStatus, Status);
+
+
 public:
+	UPROPERTY(BlueprintAssignable, Category = "Tcp-Authentication")
+	FAuthenticationStatusChange OnAuthStatusChange;
 	void Initialize(TcpClientSender* sender);
 	UFUNCTION(BLueprintCallable, Category="Tcp-Authentication")
 	int SendClientAuthenticateChallenge(FString userName);

@@ -44,14 +44,8 @@ uint32 TcpClientWorker::Run()
 		{
 			if (HeartBeatCheck.GetTotalSeconds() > 4 && ClientSenderPtr->HasMessagesQueued() == false)
 			{
-#ifdef UE_SERVER
 				//get game server heartbeat message
-				TArray<uint8> HeartBeatData = Serializer->GetGmsgHeartbeatMessage();
-#else
-				//get client heartbeat message
 				TArray<uint8> HeartBeatData = Serializer->GetCmsgHeartbeatMessage();
-
-#endif
 				this->ClientSenderPtr->SendMessage(HeartBeatData);
 			}
 

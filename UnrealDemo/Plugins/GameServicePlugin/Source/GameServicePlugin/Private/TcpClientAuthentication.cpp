@@ -17,6 +17,12 @@ int UTcpClientAuthentication::SendClientAuthenticateChallenge(FString userName)
 	ClientSender->SendMessage(message);
 	AuthenticationStatus = ETcpClientAuthenticationStatus::AUTHSTATUS_CHALLENGE_SENT;
 	ClientKey = client_rand;
+	if(AuthenticationStatus!= ETcpClientAuthenticationStatus::AUTHSTATUS_CHALLENGE_SENT)
+	{
+		if (OnAuthStatusChange.IsBound())
+			OnAuthStatusChange.Broadcast(AuthenticationStatus);
+	}
+	
 	return client_rand;
 }
 
@@ -26,6 +32,12 @@ void UTcpClientAuthentication::SendClientAuthenticate(FString password)
 	TArray<uint8> message = serializer->GetCmsgAuthenticate(password, Salt, ClientKey, ServerKey);
 	ClientSender->SendMessage(message);
 	AuthenticationStatus = ETcpClientAuthenticationStatus::AUTHSTATUS_CREDENTIAL_SENT;
+	if (AuthenticationStatus != ETcpClientAuthenticationStatus::AUTHSTATUS_CHALLENGE_SENT)
+	{
+		if (OnAuthStatusChange.IsBound())
+			OnAuthStatusChange.Broadcast(AuthenticationStatus);
+	}
+	
 }
 
 int UTcpClientAuthentication::GetClientAuthkey()
@@ -53,6 +65,12 @@ void UTcpClientAuthentication::OnSmsgAuthenticateChallenge(FGameServiceMessage M
 	ServerKey = FCString::Atoi(Message.MessageContents.Find("ServerKey")->GetCharArray().GetData());
 	Salt = (Message.MessageContents.Find("Salt")->GetCharArray().GetData());
 	AuthenticationStatus = ETcpClientAuthenticationStatus::AUTHSTATUS_CHALLENGE_RECEIVED;
+	if (AuthenticationStatus != ETcpClientAuthenticationStatus::AUTHSTATUS_CHALLENGE_SENT)
+	{
+		if (OnAuthStatusChange.IsBound())
+			OnAuthStatusChange.Broadcast(AuthenticationStatus);
+	}
+	
 }
 
 void UTcpClientAuthentication::OnSmsgAuthenticate(FGameServiceMessage Message)
@@ -63,11 +81,23 @@ void UTcpClientAuthentication::OnSmsgAuthenticate(FGameServiceMessage Message)
 		UE_LOG(LogTemp, Warning, TEXT("Auth Success"))
 		Token = Message.MessageContents.Find("token")->GetCharArray().GetData();
 		AuthenticationStatus = ETcpClientAuthenticationStatus::AUTHSTATUS_AUTHENTICATED;
+		if (AuthenticationStatus != ETcpClientAuthenticationStatus::AUTHSTATUS_CHALLENGE_SENT)
+		{
+			if (OnAuthStatusChange.IsBound())
+				OnAuthStatusChange.Broadcast(AuthenticationStatus);
+		}
+		
 	}
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Auth Failure"));
 		Token = "nil";
 		AuthenticationStatus = ETcpClientAuthenticationStatus::AUTHSTATUS_AUTH_ERROR;
+		if (AuthenticationStatus != ETcpClientAuthenticationStatus::AUTHSTATUS_CHALLENGE_SENT)
+		{
+			if (OnAuthStatusChange.IsBound())
+				OnAuthStatusChange.Broadcast(AuthenticationStatus);
+		}
+		
 	}
 }

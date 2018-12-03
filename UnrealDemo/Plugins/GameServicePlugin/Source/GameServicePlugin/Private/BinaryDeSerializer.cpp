@@ -84,28 +84,26 @@ TMap<FString, FString> UBinaryDeSerializer::ParseSmsgHeartbeat(TArray<uint8> Mes
 TMap<FString, FString> UBinaryDeSerializer::ParseSmsgAuthenticateChallenge(TArray<uint8> MessageContents)
 {
 	TMap<FString, FString> Message;
+	Message.Empty();
 	uint8 ServerRandBin[4];
 	for(int x =0;x<4;x++)
 	{
 		ServerRandBin[x] = MessageContents[x];
 	}
 	uint32 ServerRand = BinaryToUint32(ServerRandBin);
-	uint8 SaltLen = MessageContents[4];
-	TArray<uint8> SaltBin;
-	for(int x=0;x<SaltLen;x++)
+	uint8 SaltLenBin[4];
+	for(int x=0;x<4;x++)
 	{
-		int offset = 5;
+		SaltLenBin[x] = MessageContents[x + 4];
+	}
+	uint32 SaltLen = BinaryToUint32(SaltLenBin);
+	TArray<uint8> SaltBin;
+	for(uint32 x=0;x<SaltLen;x++)
+	{
+		int offset = 8;
 		SaltBin.Add(MessageContents[x + offset]);
 	}
 	FString Salt = UTF8_TO_TCHAR(SaltBin.GetData());
-	/*Salt.Empty(SaltLen);
-	for(int x=0;x<SaltBin.Num();x++)
-	{
-		int16 value = SaltBin.GetData()[x];
-		value += 1;
-		Salt += UTF8_TO_TCHAR(value);
-	}*/
-
 	Message.Add("ServerKey", FString::FromInt(ServerRand));
 	Message.Add("Salt", Salt);
 	return Message;

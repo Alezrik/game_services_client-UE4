@@ -42,7 +42,7 @@ uint32 TcpClientWorker::Run()
 		FTimespan HeartBeatCheck = FDateTime::Now() - LastActivity;
 		if(Socket.IsValid())
 		{
-			if (HeartBeatCheck.GetTotalSeconds() > 4 && ClientSenderPtr->HasMessagesQueued() == false)
+			if (HeartBeatCheck.GetTotalSeconds() > 12 && ClientSenderPtr->HasMessagesQueued() == false)
 			{
 				//get game server heartbeat message
 				TArray<uint8> HeartBeatData = Serializer->GetCmsgHeartbeatMessage();

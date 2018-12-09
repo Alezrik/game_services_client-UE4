@@ -1,6 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "BinaryDeSerializer.h"
+#include "IGameServicePlugin.h"
+
+
 
 FGameServiceMessage UBinaryDeSerializer::DeserializeBinary(TArray<uint8> Binary)
 {
@@ -104,6 +107,7 @@ TMap<FString, FString> UBinaryDeSerializer::ParseSmsgAuthenticateChallenge(TArra
 		SaltBin.Add(MessageContents[x + offset]);
 	}
 	FString Salt = UTF8_TO_TCHAR(SaltBin.GetData());
+	UE_LOG(GameServiceLog, Warning, TEXT("SaltLen: %d, Salt: %s"), SaltLen, *Salt);
 	Message.Add("ServerKey", FString::FromInt(ServerRand));
 	Message.Add("Salt", Salt);
 	return Message;

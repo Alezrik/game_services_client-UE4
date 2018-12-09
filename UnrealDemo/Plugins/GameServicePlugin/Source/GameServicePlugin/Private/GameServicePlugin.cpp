@@ -5,7 +5,7 @@
 #include "IGameServicePlugin.h"
 
 
-
+DEFINE_LOG_CATEGORY(GameServiceLog);
 
 class FGameServicePlugin : public IGameServicePlugin
 {

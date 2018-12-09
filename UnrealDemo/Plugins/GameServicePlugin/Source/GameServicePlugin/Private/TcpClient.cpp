@@ -71,6 +71,7 @@ EGameServiceConnectionStatus UTcpClient::DisconnectFromGameService()
 	if(Socket.IsValid())
 	{
 		TSharedPtr<FSocket, ESPMode::ThreadSafe> SocketPtr = Socket.Pin();
+		DisconnectFromGameService();
 		if(SocketPtr.IsValid())
 		{
 			if (SocketPtr->GetConnectionState() == ESocketConnectionState::SCS_Connected)

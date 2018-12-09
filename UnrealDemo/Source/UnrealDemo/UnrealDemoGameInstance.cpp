@@ -13,11 +13,11 @@
 
 void UUnrealDemoGameInstance::Init()
 {
-	SetupTcpClient();
+	//SetupTcpClient();
 }
 void UUnrealDemoGameInstance::Shutdown()
 {
-	TeardownTcpClient();
+	//TeardownTcpClient();
 }
 
 void UUnrealDemoGameInstance::SetupTcpClient()
@@ -46,6 +46,11 @@ void UUnrealDemoGameInstance::TeardownTcpClient()
 
 UTcpClient* UUnrealDemoGameInstance::GetTcpClient()
 {
+	if (!TcpClient)
+	{
+		SetupTcpClient();
+		TcpClient->ConnectToGameService();
+	}
 	return TcpClient;
 }
 

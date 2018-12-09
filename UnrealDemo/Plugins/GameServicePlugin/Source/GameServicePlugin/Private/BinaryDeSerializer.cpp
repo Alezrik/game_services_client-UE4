@@ -107,6 +107,8 @@ TMap<FString, FString> UBinaryDeSerializer::ParseSmsgAuthenticateChallenge(TArra
 		SaltBin.Add(MessageContents[x + offset]);
 	}
 	FString Salt = UTF8_TO_TCHAR(SaltBin.GetData());
+	if (Salt.Len() > (int32)SaltLen)
+		Salt = Salt.Left(SaltLen);
 	UE_LOG(GameServiceLog, Warning, TEXT("SaltLen: %d, Salt: %s"), SaltLen, *Salt);
 	Message.Add("ServerKey", FString::FromInt(ServerRand));
 	Message.Add("Salt", Salt);
